@@ -2,14 +2,15 @@
 library(ggplot2)
 library(cowplot)
 library(varbvs)
+source("../code/gemma.R")
 
 # SCRIPT PARAMETERS
-# -----------------
 n  <- 800   # Number of samples.
 p  <- 2000  # Number of variables (genetic markers).
 na <- 20    # Number of quantitative trait loci (QTLs).
 se <- 4     # Variance of residual.
 r  <- 0.5   # Proportion of variance in trait explained by QTLs.
+ns <- 1e5   # Length of Markov chain.
 
 # Candidate values for the prior log-odds of inclusion.
 logodds <- seq(-3,-1,0.1)
@@ -17,8 +18,6 @@ logodds <- seq(-3,-1,0.1)
 # Set the random number generator seed.
 set.seed(1)
 
-# GENERATE DATA SET
-# -----------------
 # Generate the minor allele frequencies so that they are uniform over
 # range [0.05,0.5]. Then simulate genotypes assuming all markers are
 # uncorrelated (i.e., unlinked), according to the minor allele
@@ -51,46 +50,42 @@ mu <- rnorm(1)
 # Generate the quantitative trait measurements.
 y <- c(mu + X %*% beta + sqrt(se)*rnorm(n))
 
-# FIT VARIATIONAL APPROXIMATION TO POSTERIOR
-# ------------------------------------------
 # Fit the fully-factorized variational approximation to the posterior
 # distribution of the coefficients for a linear regression model of a
 # continuous outcome (quantitiative trait), with spike and slab priors on
 # the coefficients. 
 cat("2. FITTING VARBVS MODEL TO DATA.\n")
-fit.varbvs <- varbvs(X,NULL,y,"gaussian",logodds = logodds,n0 = 0)
-cat("\n")
+fit.varbvs <- varbvs(X,NULL,y,"gaussian",logodds = logodds,sa = sb,
+                     verbose = FALSE)
 
+# Fit the BSLMM model using an MCMC algorithm.
 cat("3. FITTING BSLMM MODEL TO DATA.\n")
-# TO DO.
+fit.bslmm <- bslmm(X,y)
 
 # TO DO: Add comments here explaining what this code chunk does.
 cat("4. SUMMARIZING VARBVS & BSLMM RESULTS.\n")
 
 # Compute the false positive rate (FPR) and true positive rate (TPR)
 # at each PIP threshold.
-dat <- data.frame(pip.cutoff = seq(0,1,0.01),
-                  tpr.varbvs = 0,
-                  fpr.varbvs = 0,
-                  tpr.bslmm  = 0,
-                  fpr.bslmm  = 0)
+fpr <- data.frame(pip.cutoff = seq(0,1,0.01),
+                  varbvs     = 0,
+                  bslmm      = 0)
 for (i in 1:101) {
 
   # Get the PIP threshold.
-  r <- dat$pip.cutoff[i]
+  r <- fpr$pip.cutoff[i]
 
-  # Compute the varbvs TPR and FPR.
-  np                <- sum(fit.varbvs$pip >= r)
-  ntp               <- sum(fit.varbvs$pip >= r & beta != 0)
-  nfp               <- sum(fit.varbvs$pip >= r & beta == 0)
-  dat$tpr.varbvs[i] <- ntp / np
-  dat$fpr.varbvs[i] <- nfp / np
+  # Compute the FPR for the varbvs method.
+  np            <- sum(fit.varbvs$pip >= r)
+  nfp           <- sum(fit.varbvs$pip >= r & beta == 0)
+  fpr$varbvs[i] <- nfp / np
+
+  # Compute the FPR for the BSLMM method.
+  np           <- sum(fit.bslmm$pip >= r)
+  nfp          <- sum(fit.bslmm$pip >= r & beta == 0)
+  fpr$bslmm[i] <- nfp / np
 }
 
-p1 <- ggplot(dat,aes(x = pip.cutoff,y = tpr.varbvs)) +
-  geom_line()
-
-p2 <- ggplot(dat,aes(x = pip.cutoff,y = fpr.varbvs)) +
-  geom_line()
-
-print(plot_grid(p1,p2))
+print(ggplot(fpr,aes(x = pip.cutoff)) +
+      geom_line(aes(y = varbvs),color = "darkorange") +
+      geom_line(aes(y = bslmm),color = "darkblue",linetype = "dashed"))
