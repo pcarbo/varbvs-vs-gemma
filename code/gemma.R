@@ -1,4 +1,9 @@
-# TO DO: Explain here what this function does.
+# Fit the BSLMM model to the data using GEMMA, and output the marginal
+# posterior inclusion probabilities (PIPs). Input argumnet ns
+# specifies the length of the Markov chain for the MCMC algorithm, and
+# input argument m specifies the interval for saving the state of the
+# Markov chain. For example, if m = 100 and ns = 1e5, then the state
+# will be saved 1,000 times.
 bslmm <- function (X, y, ns = 1e5, m = 100, seed = 1) {
 
   # Get the number of predictors / markers

@@ -1,0 +1,1 @@
+* Add instructions to README for rendering webpages from R Markdown.
