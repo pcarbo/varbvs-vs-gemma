@@ -6,8 +6,8 @@
 # SCRIPT SETTINGS
 # ---------------
 # Parameters controlling generation of data set.
-n  <- 800   # Number of samples
-p  <- 2000  # Number of variables or genetic markers.
+n  <- 1000  # Number of samples.
+p  <- 20000 # Number of variables or genetic markers.
 na <- 20    # Number of quantitative trait loci (QTLs).
 se <- 4     # Variance of the residual.
 r  <- 0.5   # Proportion of variance in trait explained by QTLs.
@@ -19,7 +19,7 @@ m  <- 100
 
 # Candidate values for the prior log-odds of inclusion in the varbvs
 # model.
-logodds <- seq(-3,-1,0.1)
+logodds <- seq(-4,-1,0.1)
 
 # Initialize the pseudorandom number generator.
 set.seed(1)
@@ -27,7 +27,7 @@ set.seed(1)
 # Load the varbvs package, as well as some additional functions I
 # implemented for this analysis.
 library(varbvs)
-source("../code/gemma.R")
+source("gemma.R")
 
 # GENERATE DATA SET
 # -----------------
@@ -68,8 +68,7 @@ y <- c(mu + X %*% beta + sqrt(se)*rnorm(n))
 # continuous outcome (quantitiative trait), with spike-and-slab priors on
 # the coefficients.
 cat("Fitting varbvs model.\n")
-fit.varbvs <- varbvs(X,NULL,y,"gaussian",logodds = logodds,sa = sb,
-                     verbose = FALSE)
+fit.varbvs <- varbvs(X,NULL,y,"gaussian",logodds = logodds)
 					 
 # FIT BVSR MODEL
 # --------------
@@ -79,7 +78,7 @@ fit.varbvs <- varbvs(X,NULL,y,"gaussian",logodds = logodds,sa = sb,
 # GEMMA software, this is called the BVSR model, short for "Bayesian
 # variable selection in regression."
 cat("Fitting BVSR model using GEMMA.\n")
-fit.bvsr <- mcmc.bvsr(X,y,verbose = FALSE)
+fit.bvsr <- mcmc.bvsr(X,y)
 
 # SAVE RESULTS
 # ------------
