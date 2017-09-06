@@ -9,5 +9,5 @@ directory:
 
 ```R
 library(rmarkdown)
-render("demo.sim.Rmd",envir = new.env(),output_dir = "../docs")
+render("demo.sim.plots.Rmd",envir = new.env(),output_dir = "../docs")
 ```

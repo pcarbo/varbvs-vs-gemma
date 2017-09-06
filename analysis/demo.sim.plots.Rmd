@@ -1,0 +1,81 @@
+---
+title: "Calibration of varbvs and BVSR methods"
+author: "Peter Carbonetto"
+date: September 5, 2017
+output:
+  html_document:
+    theme: readable
+    toc: false
+    toc_float: false
+    include:
+      before_body: include/header.html
+      after_body: include/footer.html
+---
+
+Check calibration of the varbvs and GEMMA posterior inclusion
+probabilities (PIPs) in a small, simulated data set in which all the
+genetic markers are uncorrelated (*i.e.*, unlinked).
+
+```{r knitr, echo=FALSE}
+knitr::opts_chunk$set(
+  eval      = TRUE,
+  comment   = "#",
+  results   = "hold",
+  collapse  = TRUE,
+  fig.align = "center")
+```
+
+Load these packages.
+
+```{r load-pkgs, message=FALSE}
+library(ggplot2)
+library(cowplot)
+```
+
+Load the results of running the `demo.sim.R` script.
+
+```{r load-results}
+load("../output/demo.sim.out.RData")
+```
+
+## Compare varbvs and BVSR results
+
+Compute the false positive rate (FPR) at each posterior inclusion
+probability (PIP) threshold.
+
+```{r compute-fpr}
+compute.fpr <- function (beta, pip) {
+  x <- unique(round(fit.varbvs$pip,digits = 3))
+  x <- c(0,x,1)
+  x <- sort(unique(x))
+  n <- length(x)
+  y <- rep(0,n)
+  y[1] <- 1
+  for (i in 2:(n-1))
+    y[i] <- sum(pip >= x[i] & beta == 0) / sum(pip >= x[i])
+  return(data.frame(cutoff = x,fpr = y))
+}
+fpr.varbvs <- compute.fpr(beta,fit.varbvs$pip)
+fpr.bvsr   <- compute.fpr(beta,fit.bvsr$pip)
+```
+
+Plot FPR vs. PIP for the varbvs and BVSR methods.
+
+```{r plot-fpr-vs-threshold, fig.width=4, fig.height=3.5}
+print(ggplot() +
+      geom_line(data = fpr.varbvs,mapping = aes(x = cutoff,y = fpr),
+	            color = "darkorange",size = 1) +
+      geom_line(data = fpr.bvsr,mapping = aes(x = cutoff,y = fpr),
+	            color = "darkblue",linetype = "dashed",size = 1) +
+  labs(x = "PIP threshold",y = "FPR") +
+  theme_cowplot(font_size = 14))
+```
+
+## Session information
+
+This is the version of R and the packages that were used to generate
+these results in script `demo.sim.R`.
+
+```{r session-info}
+session.info
+```

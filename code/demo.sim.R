@@ -13,7 +13,7 @@ se <- 4     # Variance of the residual.
 r  <- 0.5   # Proportion of variance in trait explained by QTLs.
 
 # Length of Markov chain for simulating BVSR posterior (ns) and
-# interval for saving state of Markov chain (m).
+# interval for saving state of the Markov chain (m).
 ns <- 1e5
 m  <- 100
 
@@ -83,8 +83,10 @@ fit.bvsr <- mcmc.bvsr(X,y,verbose = FALSE)
 
 # SAVE RESULTS
 # ------------
+cat("Saving results to .RData file.\n")
 session.info <- sessionInfo()
-save(list = c("ns","m","r","maf","mu","beta","X","y","se","fit.varbvs",
-              "fit.bvsr","session.info"),file = "../output/demo.sim.out")
+save(list = c("ns","m","r","maf","mu","beta","X","y","se",
+              "fit.varbvs","fit.bvsr","session.info"),
+     file = "../output/demo.sim.out.RData")
 
 
