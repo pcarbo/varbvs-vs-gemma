@@ -1,7 +1,7 @@
 ---
 title: "Calibration of varbvs and BVSR methods"
 author: "Peter Carbonetto"
-date: September 5, 2017
+date: September 6, 2017
 output:
   html_document:
     theme: readable
@@ -67,9 +67,25 @@ print(ggplot() +
 	            color = "darkorange",size = 1) +
       geom_line(data = fpr.bvsr,mapping = aes(x = cutoff,y = fpr),
 	            color = "darkblue",linetype = "dashed",size = 1) +
+				geom_abline(intercept = 1,slope = -1,linetype = "dotted",
+				color = "gray") +
   labs(x = "PIP threshold",y = "FPR") +
   theme_cowplot(font_size = 14))
 ```
+
+This is the breakdown of the individual PIPs. 
+
+```{r pip-scatterplot, fig.width=5, fig.height=4.5}
+print(ggplot(data.frame(bvsr = fit.bvsr$pip,varbvs = fit.varbvs$pip),
+             aes(x = bvsr,y = varbvs)) +
+  geom_point(color = "black",shape = 20,size = 2) +
+  geom_abline(intercept = 0,slope = 1,color = "gray",linetype = "dotted") +
+  labs(x = "BVSR PIP",y = "varbvs PIP"))
+```
+
+Overall, the PIPs are similar, except that varbvs seems to apply more
+shrinkage to the weaker candidate predictors (PIP near 0), and less
+shrinkage to the strongest candidates (PIP near 1).
 
 ## Session information
 
