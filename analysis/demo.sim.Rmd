@@ -1,5 +1,5 @@
 ---
-title: "Calibration of varbvs and BSLMM methods"
+title: "Calibration of varbvs and BVSR methods"
 author: "Peter Carbonetto"
 date: September 5, 2017
 output:
@@ -23,13 +23,13 @@ knitr::opts_chunk$set(
   fig.align = "center")
 ```
 
-## Setup
+## Set up experiment
 
 These variables control the settings for simulating the data set and
 running the algorithms: number of samples (n); number of variables, or
 genetic markers (p); number of quantitative trait loci (na); variance
 of the residual (se); proportion of variance in trait explained by
-QTLs (r); length of Markov chain for simulating from BSLMM posterior
+QTLs (r); length of Markov chain for simulating from BVSR posterior
 (ns); candidate values for the prior log-odds of inclusion (logodds);
 and seed for initializing the random number generator.
 
@@ -57,7 +57,7 @@ source("../code/gemma.R")
 ## Generate data set
 
 Generate the minor allele frequencies so that they are uniform over
-range $\[0.05, 0.5\]$. Then simulate genotypes assuming all markers
+range $[0.05, 0.5]$. Then simulate genotypes assuming all markers
 are uncorrelated (*i.e.*, unlinked), according to the minor allele
 frequencies specified by vector "maf".
 
@@ -111,39 +111,42 @@ the coefficients.
 fit.varbvs <- varbvs(X,NULL,y,"gaussian",logodds = logodds,sa = sb)
 ```
 					 
-## Fit BSLMM model
+## Fit BVSR model
 
-```{r fit-bslmm, results="hide", cache=TRUE}
-fit.bslmm <- bslmm(X,y)
+Fit (nearly) the same model, but using an MCMC algorithm to simulate
+the posterior distribution instead of computing approximate posterior
+probabilities using a variational approximation. In the GEMMA
+software, this is called the BVSR model, short for "Bayesian variable
+selection in regression."
+
+```{r fit-bvsr, results="hide", cache=TRUE}
+fit.bvsr <- mcmc.bvsr(X,y)
 ```
 
-## Compare varbvs and BSLMM results
+## Compare varbvs and BVSR results
 
-Compute the false positive rate (FPR) at each PIP threshold.
+Compute the false positive rate (FPR) at each posterior inclusion
+probability (PIP) threshold.
 
 ```{r compute-fpr}
-fpr <- data.frame(pip.cutoff = seq(0,1,0.01),varbvs = 0,bslmm = 0)
-for (i in 1:101) {
-
-  # Get the PIP threshold.
-  r <- fpr$pip.cutoff[i]
-
-  # Compute the FPR for the varbvs method.
-  np            <- sum(fit.varbvs$pip >= r)
-  nfp           <- sum(fit.varbvs$pip >= r & beta == 0)
-  fpr$varbvs[i] <- nfp / np
-
-  # Compute the FPR for the BSLMM method.
-  np           <- sum(fit.bslmm$pip >= r)
-  nfp          <- sum(fit.bslmm$pip >= r & beta == 0)
-  fpr$bslmm[i] <- nfp / np
+fpr  <- data.frame(pip.cutoff = seq(0,1,0.01),varbvs = 0,bvsr = 0)
+pip1 <- fit.varbvs$pip
+pip2 <- fit.bvsr$pip
+fpr[1,-1]   <- 1
+fpr[101,-1] <- 0
+for (i in 2:100) {
+  d <- fpr$pip.cutoff[i]
+  fpr$varbvs[i] <- sum(pip1 >= d & beta == 0) / sum(pip1 >= d)
+  fpr$bvsr[i]   <- sum(pip2 >= d & beta == 0) / sum(pip2 >= d)
 }
 ```
 
-```{r plot-fpr-vs-threshold}
+```{r plot-fpr-vs-threshold, fig.width=4, fig.height=3.5}
 print(ggplot(fpr,aes(x = pip.cutoff)) +
-      geom_line(aes(y = varbvs),color = "darkorange") +
-      geom_line(aes(y = bslmm),color = "darkblue",linetype = "dashed"))
+      geom_line(aes(y = varbvs),color = "darkorange",size = 1) +
+      geom_line(aes(y = bvsr),color = "darkblue",linetype = "dashed",
+      	        size = 1) +
+  labs(x = "PIP threshold",y = "FPR"))
 ```
 
 ## Session information
