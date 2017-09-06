@@ -68,7 +68,7 @@ y <- c(mu + X %*% beta + sqrt(se)*rnorm(n))
 # continuous outcome (quantitiative trait), with spike-and-slab priors on
 # the coefficients.
 cat("Fitting varbvs model.\n")
-fit.varbvs <- varbvs(X,NULL,y,"gaussian",logodds = logodds,sa = sb)
+fit.varbvs <- varbvs(X,NULL,y,"gaussian",logodds = logodds)
 					 
 # FIT BVSR MODEL
 # --------------
